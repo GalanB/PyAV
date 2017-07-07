@@ -85,15 +85,19 @@ cdef class Frame(object):
                 self.ptr.pts,
                 self._time_base, dst
             )
+        if self.ptr.pkt_dts != lib.AV_NOPTS_VALUE:
+            self.ptr.pkt_dts = lib.av_rescale_q(
+                self.ptr.pkt_dts,
+                self._time_base, dst
+            )
+        if self.ptr.pkt_duration > 0:
+            self.ptr.pkt_duration = lib.av_rescale_q(
+                self.ptr.pkt_duration,
+                self._time_base, dst
+            )
 
         self._time_base = dst
 
-
-    property dts:
-        def __get__(self):
-            if self.ptr.pkt_dts == lib.AV_NOPTS_VALUE:
-                return None
-            return self.ptr.pkt_dts
 
     property pts:
         def __get__(self):
@@ -105,6 +109,23 @@ cdef class Frame(object):
                 self.ptr.pts = lib.AV_NOPTS_VALUE
             else:
                 self.ptr.pts = value
+
+    property dts:
+        def __get__(self):
+            if self.ptr.pkt_dts == lib.AV_NOPTS_VALUE:
+                return None
+            return self.ptr.pkt_dts
+        def __set__(self, value):
+            if value is None:
+                self.ptr.pkt_dts = lib.AV_NOPTS_VALUE
+            else:
+                self.ptr.pkt_dts = value
+
+    property duration:
+        def __get__(self):
+            return self.ptr.pkt_duration
+        def __set__(self, value):
+            self.ptr.pkt_duration = value
 
     property time:
         def __get__(self):

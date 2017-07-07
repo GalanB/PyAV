@@ -267,9 +267,11 @@ cdef class CodecContext(object):
 
         # Assert the frames are in our time base.
         # TODO: Don't mutate time.
+        """
         for frame in frames:
             if frame is not None:
                 frame._rebase_time(self.ptr.time_base)
+        """
 
         res = []
 
@@ -307,7 +309,8 @@ cdef class CodecContext(object):
     cdef _setup_encoded_packet(self, Packet packet):
         # The packet's timing was simply copied across from the source frame.
         # The muxer will take care of rebasing time if it needs to.
-        packet._time_base = self.ptr.time_base
+        if packet._time_base.num == 0:
+            packet._time_base = self.ptr.time_base
 
     cdef _encode(self, Frame frame):
         raise NotImplementedError('Base CodecContext cannot encode frames.')
@@ -336,6 +339,7 @@ cdef class CodecContext(object):
         ):
             res = []
             for frame in self._send_packet_and_recv(packet):
+                frame.time_base = packet.time_base
                 self._setup_decoded_frame(frame)
                 res.append(frame)
             return res
@@ -396,16 +400,21 @@ cdef class CodecContext(object):
         if frame.ptr.pts == lib.AV_NOPTS_VALUE:
             frame.ptr.pts = frame.ptr.pkt_pts
 
-        if self.stream_index >= 0 and self.container and self.stream_index < self.container.ptr.nb_streams:
-            # If we are decoding in the context of a stream, assume the time
-            # base came from there.
-            # TODO: Actually track that packets have a consistent time_base,
-            # and pull it from there.
-            frame._time_base = self.container.ptr.streams[self.stream_index].time_base
+        if frame._time_base.num != 1 and frame._time_base.num != 1001:
+          if self.stream_index >= 0 and self.container and self.stream_index < self.container.ptr.nb_streams:
+              # If we are decoding in the context of a stream, assume the time
+              # base came from there.
+              # TODO: Actually track that packets have a consistent time_base,
+              # and pull it from there.
+              frame._time_base = self.container.ptr.streams[self.stream_index].time_base
+          else:
+              # This is a bad assumption to make, as it seems like AVCodecContext
+              # barely cares about timing information.
+              frame._time_base = self.ptr.time_base
         else:
-            # This is a bad assumption to make, as it seems like AVCodecContext
-            # barely cares about timing information.
-            frame._time_base = self.ptr.time_base
+            if self.ptr.time_base.den == 120000 or self.ptr.time_base.den == 60000:
+              self.ptr.time_base.den /= 2
+            frame._rebase_time(self.ptr.time_base)
 
         frame.index = self.ptr.frame_number - 1
 

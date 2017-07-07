@@ -217,7 +217,8 @@ cdef extern from "libavcodec/avcodec.pyav.h" nogil:
 
         int64_t pts
         int64_t pkt_pts # Deprecated.
-        int64_t pkt_dts # Deprecated.
+        int64_t pkt_dts
+        int64_t pkt_duration
 
         int pkt_size
 

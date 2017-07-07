@@ -123,6 +123,8 @@ cdef class InputContainer(Container):
                     if packet.struct.stream_index < len(self.streams):
                         packet._stream = self.streams[packet.struct.stream_index]
                         # Keep track of this so that remuxing is easier.
+                        if packet._stream._stream.time_base.den == 120000 or packet._stream._stream.time_base.den == 60000:
+                          packet._stream._stream.time_base.den /= 2
                         packet._time_base = packet._stream._stream.time_base
                         yield packet
 

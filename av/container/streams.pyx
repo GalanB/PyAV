@@ -91,6 +91,9 @@ cdef class StreamContainer(object):
         else:
             self.other = self.other + (stream, )
 
+        if stream._codec_context.ticks_per_frame > 1:
+          stream._codec_context.time_base.den /= stream._codec_context.ticks_per_frame
+          stream._codec_context.ticks_per_frame = 1
     # Basic tuple interface.
     def __len__(self):
         return len(self._streams)

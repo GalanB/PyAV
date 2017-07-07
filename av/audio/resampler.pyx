@@ -116,9 +116,11 @@ cdef class AudioResampler(object):
         # Assert that the PTS are what we expect.
         cdef uint64_t expected_pts
         if frame is not None and frame.ptr.pts != lib.AV_NOPTS_VALUE:
+            """
             expected_pts = <uint64_t>(self.pts_per_sample_in * self.samples_in)
             if frame.ptr.pts != expected_pts:
                 raise ValueError('Input frame pts %d != expected %d; fix or set to None.' % (frame.ptr.pts, expected_pts))
+            """
             self.samples_in += frame.ptr.nb_samples
 
         # The example "loop" as given in the FFmpeg documentation looks like:
@@ -177,7 +179,7 @@ cdef class AudioResampler(object):
         if self.simple_pts_out:
             output._time_base.num = 1
             output._time_base.den = self.rate
-            output.ptr.pts = self.samples_out
+            output.ptr.pts = frame.ptr.pts
         else:
             output._time_base.num = 0
             output._time_base.den = 1

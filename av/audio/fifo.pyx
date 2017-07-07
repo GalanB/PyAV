@@ -80,13 +80,17 @@ cdef class AudioFifo:
         ):
             raise ValueError('Frame does not match AudioFifo parameters.')
 
+        """
         # Assert that the PTS are what we expect.
         cdef uint64_t expected_pts
         if self.pts_per_sample and frame.ptr.pts != lib.AV_NOPTS_VALUE:
             expected_pts = <uint64_t>(self.pts_per_sample * self.samples_written)
             if frame.ptr.pts != expected_pts:
                 raise ValueError('Frame.pts (%d) != expected (%d); fix or set to None.' % (frame.ptr.pts, expected_pts))
+        """
 
+        if self.first_pts == 0:
+          self.first_pts = frame.ptr.pts
         err_check(lib.av_audio_fifo_write(
             self.ptr,
             <void **>frame.ptr.extended_data,
@@ -142,7 +146,7 @@ cdef class AudioFifo:
         ))
 
         if self.pts_per_sample:
-            frame.ptr.pts = <uint64_t>(self.pts_per_sample * self.samples_read)
+            frame.ptr.pts = <uint64_t>(self.first_pts + self.samples_read)
         else:
             frame.ptr.pts = lib.AV_NOPTS_VALUE
 
