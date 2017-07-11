@@ -41,7 +41,7 @@ cdef Stream wrap_stream(Container container, lib.AVStream *c_stream):
         py_stream = DataStream.__new__(DataStream, _cinit_bypass_sentinel)
     else:
         from av.other.stream import OtherStream
-        py_stream = Stream.__new__(OtherStream, _cinit_bypass_sentinel)
+        py_stream = OtherStream.__new__(OtherStream, _cinit_bypass_sentinel)
 
     py_stream._init(container, c_stream)
     return py_stream
